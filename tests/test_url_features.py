@@ -31,6 +31,36 @@ class TestURLFeatures(unittest.TestCase):
         result = extract_url_features(url)
         self.assertEqual(result["url_length"], len(url))
 
+    
+    def test_empty_url_rejected(self):
+        with self.assertRaises(ValueError):
+            extract_url_features("")
+
+    def test_whitespace_only_rejected(self):
+        with self.assertRaises(ValueError):
+            extract_url_features("   ")
+
+    def test_plain_text_rejected(self):
+        with self.assertRaises(ValueError):
+            extract_url_features("hello world")
+
+    def test_missing_hostname_rejected(self):
+        with self.assertRaises(ValueError):
+            extract_url_features("https:///login")
+
+    def test_unsupported_scheme_rejected(self):
+        with self.assertRaises(ValueError):
+            extract_url_features("ftp://example.com")
+
+    def test_non_text_input_rejected(self):
+        with self.assertRaises(ValueError):
+            extract_url_features(None)
+
+    def test_invalid_port_rejected(self):
+        with self.assertRaises(ValueError):
+            extract_url_features("https://example.com:99999")
+
+
 
 if __name__ == "__main__":
     unittest.main()
