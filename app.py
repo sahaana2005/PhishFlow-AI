@@ -1,6 +1,6 @@
-
 from flask import Flask, render_template, request
 import joblib
+import os
 import sqlite3
 import sys
 
@@ -16,6 +16,11 @@ SRC_DIR = BASE_DIR / "src"
 
 MODEL_PATH = BASE_DIR / "models" / "phishflow_random_forest.pkl"
 DATABASE_PATH = BASE_DIR / "phishflow.db"
+
+# Vercel's project folder is read-only, so use /tmp when it can't be written to.
+# (Scan history in /tmp is temporary and resets now and then.)
+if not os.access(BASE_DIR, os.W_OK):
+    DATABASE_PATH = Path("/tmp/phishflow.db")
 
 MAX_URL_LENGTH = 2048
 
