@@ -1,5 +1,6 @@
+<img width="1456" height="948" alt="image" src="https://github.com/user-attachments/assets/89b1fefe-3a86-4dea-9712-01bf228eeb3b" />
 
-# 🔐 PhishFlow-AI
+#  PhishFlow-AI
 ### Exploring Machine Learning Through Cybersecurity
 
 PhishFlow-AI is a machine learning-based phishing URL detection project developed to explore how machine learning can be applied to cybersecurity, particularly in identifying potentially malicious URLs.
@@ -10,7 +11,7 @@ The goal was not just to build a phishing classifier, but to understand the comp
 
 ---
 
-## 🌱 How It Started
+##  How It Started
 
 Machine learning was initially a new area for me. Rather than immediately jumping into complex algorithms or frameworks, I started by understanding how a basic ML pipeline works.
 
@@ -31,7 +32,7 @@ This progression — from visual experimentation to code-based implementation �
 
 ---
 
-## 🧩 KNIME Analytics Platform — Learning the ML Workflow
+##  KNIME Analytics Platform — Learning the ML Workflow
 
 KNIME played an important role in the initial development and understanding of this project.
 
@@ -83,7 +84,7 @@ KNIME also allowed me to experiment with a trained model using additional sample
 
 ---
 
-## 🐍 Moving from KNIME to Python
+##  Moving from KNIME to Python
 
 After understanding the visual workflow, I implemented the machine learning pipeline in Python.
 
@@ -115,7 +116,7 @@ Random Forest was selected for integration into the Flask application based on i
 
 ---
 
-## 🔍 URL Feature Extraction
+##  URL Feature Extraction
 
 Instead of relying on website content, PhishFlow-AI analyzes numerical characteristics extracted directly from the submitted URL.
 
@@ -139,7 +140,7 @@ The extracted features are passed to the trained machine learning model for clas
 
 ---
 
-## 📊 Python Model Evaluation
+## Python Model Evaluation
 
 The dataset contains 20,000 URL records.
 
@@ -178,7 +179,7 @@ These results are specific to this dataset and evaluation setup. They do not gua
 
 ---
 
-## 🖥️ Web Application
+##  Web Application
 
 After training and evaluating the model, I integrated it into a Flask application to make the classifier usable through a web interface.
 
@@ -218,7 +219,7 @@ Uses Python's unittest framework to test application behaviour, input validation
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Technology | How It Is Used |
 |---|---|
@@ -237,7 +238,7 @@ Uses Python's unittest framework to test application behaviour, input validation
 
 ---
 
-## 🏗️ Project Architecture
+## Project Architecture
 
 ```text
                 PHISHFLOW-AI
@@ -286,7 +287,7 @@ Uses Python's unittest framework to test application behaviour, input validation
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```text
 PhishFlow-AI/
@@ -322,7 +323,7 @@ PhishFlow-AI/
 ---
 
 
-## 🧪 Running Tests
+##  Running Tests
 
 Run the application tests using:
 
@@ -340,7 +341,7 @@ The tests cover:
 
 ---
 
-## ⚠️ Limitations
+##  Limitations
 
 - The system analyzes URL-based features rather than website content.
 - It does not currently use live threat intelligence feeds or domain reputation services.
