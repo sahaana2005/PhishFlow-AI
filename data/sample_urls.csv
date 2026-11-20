@@ -1,0 +1,8 @@
+
+url,label
+https://www.wikipedia.org,legitimate
+https://www.python.org,legitimate
+https://www.microsoft.com,legitimate
+http://192.168.1.10/login,suspicious
+https://secure-login.example.com/verify,suspicious
+https://account-verify.example.net/password,suspicious

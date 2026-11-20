@@ -1,0 +1,6 @@
+url,url_length,uses_https,has_at_symbol,host_is_ip,subdomain_count,has_hyphen_in_hostname,uses_url_shortener,matched_keyword_count,hostname_length,path_length,hostname_digit_count
+https://www.google.com,22,1,0,0,1,0,0,0,14,0,0
+https://www.wikipedia.org,25,1,0,0,1,0,0,0,17,0,0
+https://example.com/login,25,1,0,0,0,0,0,1,11,6,0
+http://192.168.1.10/verify,26,0,0,1,0,0,0,1,12,7,9
+https://bit.ly/account-update,29,1,0,0,0,0,1,1,6,15,0
