@@ -1,6 +1,8 @@
 
 import pandas as pd
+import joblib
 
+from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -14,46 +16,67 @@ from sklearn.metrics import (
     classification_report,
 )
 
+# --------------------------------------------------
+# 1. PROJECT PATHS
+# --------------------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+FEATURES_PATH = BASE_DIR / "data" / "ml_features.csv"
+ORIGINAL_DATASET_PATH = BASE_DIR / "data" / "phishing_dataset.xlsx"
+
+MODEL_DIR = BASE_DIR / "models"
+REPORT_DIR = BASE_DIR / "reports"
+
+MODEL_PATH = MODEL_DIR / "phishflow_random_forest.pkl"
+
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # --------------------------------------------------
-# 1. LOAD DATASETS
+# 2. LOAD DATASETS
 # --------------------------------------------------
-
-FEATURES_PATH = "data/ml_features.csv"
-ORIGINAL_DATASET_PATH = "data/phishing_dataset.xlsx"
 
 features_df = pd.read_csv(FEATURES_PATH)
 original_df = pd.read_excel(ORIGINAL_DATASET_PATH)
 
-# Check that both datasets have matching rows
 if len(features_df) != len(original_df):
-    raise ValueError(
-        "The feature dataset and original dataset "
-        "have different numbers of rows. "
-        "Please prepare the feature dataset again."
-    )
+    raise ValueError("Feature dataset and original dataset have different row counts.")
 
-# Check required columns
 if "label" not in features_df.columns:
-    raise ValueError("The feature dataset must contain a 'label' column.")
+    raise ValueError("Missing 'label' column in feature dataset.")
 
 if "URLs" not in original_df.columns:
-    raise ValueError("The original dataset must contain a 'URLs' column.")
+    raise ValueError("Missing 'URLs' column in original dataset.")
+
+if features_df["label"].isna().any():
+    raise ValueError("Missing values found in label column.")
+
+# Keep the original row index so URLs remain correctly aligned
+features_df = features_df.copy()
 
 
 # --------------------------------------------------
-# 2. SEPARATE FEATURES AND LABELS
+# 3. SEPARATE FEATURES AND LABELS
 # --------------------------------------------------
 
 X = features_df.drop(columns=["label"])
-y = features_df["label"]
+y = features_df["label"].astype(int)
 
-# Keep original URLs for error analysis
 original_urls = original_df["URLs"]
+
+if X.isna().any().any():
+    raise ValueError("Missing feature values found. Clean the dataset first.")
+
+if not set(y.unique()).issubset({0, 1}):
+    raise ValueError("Labels must be 0 (Legitimate) or 1 (Phishing).")
+
+feature_names = list(X.columns)
 
 
 # --------------------------------------------------
-# 3. SPLIT DATA INTO TRAINING AND TESTING SETS
+# 4. SPLIT DATA INTO TRAINING AND TESTING
 # --------------------------------------------------
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -65,9 +88,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 print("\nDATASET INFORMATION")
-print("=" * 50)
+print("=" * 55)
 
-print("Total samples:", len(features_df))
+print("Total samples:", len(X))
 print("Training samples:", len(X_train))
 print("Testing samples:", len(X_test))
 
@@ -79,7 +102,7 @@ print(y_test.value_counts())
 
 
 # --------------------------------------------------
-# 4. DEFINE MACHINE LEARNING MODELS
+# 5. DEFINE MACHINE LEARNING MODELS
 # --------------------------------------------------
 
 models = {
@@ -98,34 +121,25 @@ models = {
 
 
 # --------------------------------------------------
-# 5. TRAIN, PREDICT AND EVALUATE EACH MODEL
+# 6. TRAIN AND EVALUATE MODELS
 # --------------------------------------------------
 
 model_results = {}
 
 for name, model in models.items():
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 55)
     print(name.upper())
-    print("=" * 50)
+    print("=" * 55)
 
-    # Train model
     model.fit(X_train, y_train)
 
-    # Predict on unseen test data
     y_pred = model.predict(X_test)
 
-    # Calculate evaluation metrics
     accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(
-        y_test, y_pred, zero_division=0
-    )
-    recall = recall_score(
-        y_test, y_pred, zero_division=0
-    )
-    f1 = f1_score(
-        y_test, y_pred, zero_division=0
-    )
+    precision = precision_score(y_test, y_pred, zero_division=0)
+    recall = recall_score(y_test, y_pred, zero_division=0)
+    f1 = f1_score(y_test, y_pred, zero_division=0)
 
     model_results[name] = {
         "model": model,
@@ -136,7 +150,6 @@ for name, model in models.items():
         "f1_score": f1,
     }
 
-    # Display metrics
     print("\nMODEL PERFORMANCE")
     print("-" * 40)
 
@@ -145,9 +158,7 @@ for name, model in models.items():
     print(f"Recall:    {recall:.4f}")
     print(f"F1-score:  {f1:.4f}")
 
-    # Display classification report
     print("\nCLASSIFICATION REPORT")
-    print("-" * 40)
 
     print(
         classification_report(
@@ -159,26 +170,20 @@ for name, model in models.items():
         )
     )
 
-    # Display confusion matrix
     print("CONFUSION MATRIX")
-    print("-" * 40)
-
     print(confusion_matrix(y_test, y_pred, labels=[0, 1]))
 
-    # Display feature importance
     importance = pd.Series(
         model.feature_importances_,
-        index=X.columns,
+        index=feature_names,
     ).sort_values(ascending=False)
 
     print("\nFEATURE IMPORTANCE")
-    print("-" * 40)
-
     print(importance.round(4))
 
 
 # --------------------------------------------------
-# 6. COMPARE BOTH MODELS
+# 7. COMPARE MODELS
 # --------------------------------------------------
 
 print("\n" + "=" * 65)
@@ -199,7 +204,7 @@ print(comparison.round(4))
 
 
 # --------------------------------------------------
-# 7. SELECT RANDOM FOREST FOR ERROR ANALYSIS
+# 8. SELECT RANDOM FOREST
 # --------------------------------------------------
 
 selected_model_name = "Random Forest"
@@ -207,10 +212,8 @@ selected_result = model_results[selected_model_name]
 
 y_pred = selected_result["predictions"]
 
-# Recover original URLs using the test-set row positions
 test_urls = original_urls.iloc[X_test.index].to_numpy()
 
-# Create a results table
 results_df = pd.DataFrame({
     "URL": test_urls,
     "Actual": y_test.to_numpy(),
@@ -219,78 +222,77 @@ results_df = pd.DataFrame({
 
 
 # --------------------------------------------------
-# 8. IDENTIFY FALSE NEGATIVES AND FALSE POSITIVES
+# 9. FALSE POSITIVE AND FALSE NEGATIVE ANALYSIS
 # --------------------------------------------------
 
-# False negatives: Actual phishing, predicted legitimate
 false_negatives = results_df[
     (results_df["Actual"] == 1) &
     (results_df["Predicted"] == 0)
 ]
 
-# False positives: Actual legitimate, predicted phishing
 false_positives = results_df[
     (results_df["Actual"] == 0) &
     (results_df["Predicted"] == 1)
 ]
 
 print("\n" + "=" * 65)
-print("ERROR ANALYSIS - RANDOM FOREST")
+print("RANDOM FOREST ERROR ANALYSIS")
 print("=" * 65)
 
-print("\nFALSE NEGATIVES")
-print("Actual phishing URLs incorrectly classified as legitimate.")
-print("Total false negatives:", len(false_negatives))
+print("\nFALSE NEGATIVES:", len(false_negatives))
+print("Phishing URLs incorrectly classified as legitimate.")
 
-print("\nFirst 10 false negative URLs:")
+print(false_negatives["URL"].head(10).to_string(index=False)
+      if len(false_negatives) else "None found.")
 
-if len(false_negatives) > 0:
-    print(
-        false_negatives["URL"]
-        .head(10)
-        .to_string(index=False)
-    )
-else:
-    print("No false negatives found.")
+print("\nFALSE POSITIVES:", len(false_positives))
+print("Legitimate URLs incorrectly classified as phishing.")
 
-
-print("\nFALSE POSITIVES")
-print("Actual legitimate URLs incorrectly classified as phishing.")
-print("Total false positives:", len(false_positives))
-
-print("\nFirst 10 false positive URLs:")
-
-if len(false_positives) > 0:
-    print(
-        false_positives["URL"]
-        .head(10)
-        .to_string(index=False)
-    )
-else:
-    print("No false positives found.")
+print(false_positives["URL"].head(10).to_string(index=False)
+      if len(false_positives) else "None found.")
 
 
 # --------------------------------------------------
-# 9. SAVE ERROR ANALYSIS REPORT
+# 10. SAVE ERROR ANALYSIS REPORTS
 # --------------------------------------------------
 
 false_negatives.to_csv(
-    "reports/random_forest_false_negatives.csv",
+    REPORT_DIR / "random_forest_false_negatives.csv",
     index=False,
 )
 
 false_positives.to_csv(
-    "reports/random_forest_false_positives.csv",
+    REPORT_DIR / "random_forest_false_positives.csv",
     index=False,
 )
 
-print("\nError analysis reports saved:")
-print("reports/random_forest_false_negatives.csv")
-print("reports/random_forest_false_positives.csv")
+print("\nError reports saved in the reports folder.")
 
 
 # --------------------------------------------------
-# 10. FINISH
+# 11. SAVE TRAINED RANDOM FOREST MODEL
 # --------------------------------------------------
 
-print("\nTRAINING AND EVALUATION COMPLETED!")
+joblib.dump(
+    {
+        "model": selected_result["model"],
+        "features": feature_names,
+        "metrics": {
+            "accuracy": selected_result["accuracy"],
+            "precision": selected_result["precision"],
+            "recall": selected_result["recall"],
+            "f1_score": selected_result["f1_score"],
+        },
+    },
+    MODEL_PATH,
+)
+
+print("\nMODEL SAVED SUCCESSFULLY")
+print("Location:", MODEL_PATH)
+
+
+# --------------------------------------------------
+# 12. FINISH
+# --------------------------------------------------
+
+print("\nPHISHFLOW-AI TRAINING COMPLETED!")

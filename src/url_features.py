@@ -4,7 +4,7 @@ import ipaddress
 
 
 def extract_url_features(url):
-    """Validate an HTTP(S) URL and extract its characteristics."""
+    """Validate an HTTP(S) URL and extract 11 numerical features."""
 
     if not isinstance(url, str):
         raise ValueError("URL must be provided as text.")
@@ -35,15 +35,15 @@ def extract_url_features(url):
 
     # 1. Basic URL features
     url_length = len(url)
-    uses_https = parsed.scheme.lower() == "https"
-    has_at_symbol = "@" in url
+    uses_https = int(parsed.scheme.lower() == "https")
+    has_at_symbol = int("@" in url)
 
     # 2. IP address detection
     try:
         ipaddress.ip_address(hostname)
-        host_is_ip = True
+        host_is_ip = 1
     except ValueError:
-        host_is_ip = False
+        host_is_ip = 0
 
     # 3. Estimated subdomain count
     if host_is_ip:
@@ -53,7 +53,7 @@ def extract_url_features(url):
         subdomain_count = max(0, len(hostname_labels) - 2)
 
     # 4. Hyphen detection
-    has_hyphen_in_hostname = "-" in hostname
+    has_hyphen_in_hostname = int("-" in hostname)
 
     # 5. URL shortener detection
     shortener_domains = {
@@ -67,9 +67,9 @@ def extract_url_features(url):
         "rebrand.ly",
     }
 
-    uses_url_shortener = hostname in shortener_domains
+    uses_url_shortener = int(hostname in shortener_domains)
 
-    # 6. Suspicious keyword detection
+    # 6. Suspicious keyword count
     suspicious_keywords = (
         "login",
         "verify",
@@ -79,15 +79,15 @@ def extract_url_features(url):
 
     url_lower = url.lower()
 
-    matched_keywords = [
-        keyword
+    matched_keyword_count = sum(
+        keyword in url_lower
         for keyword in suspicious_keywords
-        if keyword in url_lower
-    ]
+    )
 
     # 7. Additional hostname and path features
     hostname_length = len(hostname)
     path_length = len(parsed.path)
+
     hostname_digit_count = sum(
         character.isdigit() for character in hostname
     )
@@ -100,7 +100,7 @@ def extract_url_features(url):
         "subdomain_count": subdomain_count,
         "has_hyphen_in_hostname": has_hyphen_in_hostname,
         "uses_url_shortener": uses_url_shortener,
-        "matched_keywords": matched_keywords,
+        "matched_keyword_count": matched_keyword_count,
         "hostname_length": hostname_length,
         "path_length": path_length,
         "hostname_digit_count": hostname_digit_count,
@@ -108,7 +108,8 @@ def extract_url_features(url):
 
 
 if __name__ == "__main__":
-    sample_url = "https://bit.ly/example"
+
+    sample_url = "https://bit.ly/login/example"
 
     try:
         features = extract_url_features(sample_url)
@@ -118,6 +119,8 @@ if __name__ == "__main__":
 
         for feature, value in features.items():
             print(f"{feature}: {value}")
+
+        print("\nTotal features:", len(features))
 
     except ValueError as error:
         print("Input error:", error)

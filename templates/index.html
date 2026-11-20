@@ -1,0 +1,911 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PhishFlow-AI | URL Threat Analyzer</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #0c0b14;
+            color: #f5f0ff;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1150px;
+            margin: auto;
+        }
+
+        /* HEADER */
+
+        header {
+            padding: 22px 0;
+            border-bottom: 1px solid #292338;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 23px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .logo span {
+            color: #e879f9;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #72dfb0;
+            background: #14251f;
+            border: 1px solid #285b46;
+            padding: 7px 13px;
+            border-radius: 20px;
+        }
+
+        /* HERO */
+
+        .hero {
+            text-align: center;
+            padding: 65px 15px 35px;
+        }
+
+        .tag {
+            display: inline-block;
+            color: #e879f9;
+            border: 1px solid #60366d;
+            background: #24152c;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: clamp(30px, 5vw, 48px);
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+
+        .gradient {
+            background: linear-gradient(90deg, #e879f9, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero p {
+            color: #aaa3b8;
+            max-width: 650px;
+            margin: auto;
+            font-size: 15px;
+        }
+
+        /* SCANNER */
+
+        .scanner-card {
+            max-width: 800px;
+            margin: 20px auto 35px;
+            padding: 28px;
+            background: #171522;
+            border: 1px solid #352b46;
+            border-radius: 18px;
+        }
+
+        .scanner-card h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .scanner-card > p {
+            color: #aaa3b8;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 0;
+            padding: 15px;
+            border-radius: 9px;
+            border: 1px solid #443752;
+            background: #0e0c17;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #d879f9;
+            box-shadow: 0 0 0 2px #d879f922;
+        }
+
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(90deg, #c026d3, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        .hint {
+            font-size: 11px;
+            color: #777084;
+            margin-top: 13px;
+        }
+
+        /* ERROR */
+
+        .error {
+            max-width: 800px;
+            margin: 0 auto 25px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            background: #351a25;
+            border: 1px solid #9b3d5c;
+            color: #ff9bb9;
+        }
+
+        /* GENERAL SECTIONS */
+
+        .section {
+            margin: 40px 0;
+        }
+
+        .section-heading {
+            margin-bottom: 20px;
+        }
+
+        .section-heading h2 {
+            font-size: 23px;
+            margin-bottom: 5px;
+        }
+
+        .section-heading p {
+            font-size: 13px;
+            color: #aaa3b8;
+        }
+
+        /* RESULT */
+
+        .result-card {
+            padding: 25px;
+            border-radius: 15px;
+            background: #171522;
+            margin-bottom: 25px;
+            border: 1px solid #443752;
+        }
+
+        .result-card.danger {
+            border-color: #a94367;
+            background: #21131d;
+        }
+
+        .result-card.safe {
+            border-color: #34785a;
+            background: #132019;
+        }
+
+        .result-label {
+            display: inline-block;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+        }
+
+        .danger .result-label {
+            background: #492034;
+            color: #ff8db4;
+        }
+
+        .safe .result-label {
+            background: #1d4230;
+            color: #72dfb0;
+        }
+
+        .result-card h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .scanned-url {
+            color: #aaa3b8;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+            margin-bottom: 15px;
+        }
+
+        .score {
+            font-size: 30px;
+            font-weight: 700;
+            color: #e879f9;
+            margin: 10px 0;
+        }
+
+        .score-caption {
+            color: #aaa3b8;
+            font-size: 12px;
+        }
+
+        .result-note {
+            color: #aaa3b8;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        /* FEATURES */
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            padding: 13px;
+            border-radius: 9px;
+            background: #100e19;
+            border: 1px solid #30283e;
+        }
+
+        .feature-item span {
+            display: block;
+            font-size: 11px;
+            color: #aaa3b8;
+            overflow-wrap: anywhere;
+        }
+
+        .feature-item strong {
+            display: block;
+            margin-top: 5px;
+            font-size: 16px;
+            color: #e9d5ff;
+        }
+
+        /* MODEL OVERVIEW */
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .overview-card {
+            background: #171522;
+            border: 1px solid #30283e;
+            border-radius: 13px;
+            padding: 20px;
+        }
+
+        .overview-card p {
+            color: #aaa3b8;
+            font-size: 12px;
+        }
+
+        .overview-card h3 {
+            font-size: 22px;
+            margin-top: 8px;
+            color: #e879f9;
+        }
+
+        /* ANALYTICS */
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .analytics-card {
+            background: #171522;
+            border: 1px solid #30283e;
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .analytics-card p {
+            color: #aaa3b8;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .analytics-card h2 {
+            font-size: 29px;
+            margin: 0;
+        }
+
+        .phishing-value {
+            color: #ff6b9d;
+        }
+
+        .legitimate-value {
+            color: #72dfb0;
+        }
+
+        .analytics-bar {
+            height: 12px;
+            background: #30283e;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .phishing-bar {
+            height: 100%;
+            background: #ff6b9d;
+            border-radius: 20px;
+        }
+
+        .legitimate-bar {
+            height: 100%;
+            background: #72dfb0;
+            border-radius: 20px;
+        }
+
+        .distribution-card h3 {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* HISTORY */
+
+        .history-wrapper {
+            overflow-x: auto;
+            background: #171522;
+            border: 1px solid #30283e;
+            border-radius: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 16px;
+            border-bottom: 1px solid #30283e;
+            font-size: 13px;
+        }
+
+        th {
+            color: #e879f9;
+            font-weight: 600;
+            background: #1d1929;
+        }
+
+        td {
+            color: #d8d1e3;
+        }
+
+        td:first-child {
+            max-width: 300px;
+            overflow-wrap: anywhere;
+        }
+
+        .history-danger {
+            color: #ff8db4;
+        }
+
+        .history-safe {
+            color: #72dfb0;
+        }
+
+        .empty-state {
+            padding: 30px;
+            text-align: center;
+            color: #aaa3b8;
+            font-size: 13px;
+        }
+
+        /* FOOTER */
+
+        footer {
+            text-align: center;
+            padding: 35px 10px;
+            border-top: 1px solid #292338;
+            color: #777084;
+            font-size: 12px;
+            margin-top: 60px;
+        }
+
+        footer span {
+            color: #e879f9;
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 800px) {
+            .overview-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 92%;
+            }
+
+            .hero {
+                padding-top: 45px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .scanner-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+
+    <header>
+        <div class="container navbar">
+
+            <div class="logo">
+                PhishFlow<span>-AI</span>
+            </div>
+
+            <div class="status">
+                ● ML ENGINE ACTIVE
+            </div>
+
+        </div>
+    </header>
+
+
+    <main class="container">
+
+        <!-- HERO -->
+
+        <section class="hero">
+
+            <div class="tag">
+                AI-POWERED CYBERSECURITY
+            </div>
+
+            <h1>
+                Detect Threats Before <br>
+                They <span class="gradient">Reach You.</span>
+            </h1>
+
+            <p>
+                Analyze suspicious URLs using machine learning.
+                PhishFlow-AI extracts URL features and uses a
+                trained Random Forest model to identify potential
+                phishing activity.
+            </p>
+
+        </section>
+
+
+        <!-- URL SCANNER -->
+
+        <section class="scanner-card">
+
+            <h2>URL Threat Scanner</h2>
+
+            <p>
+                Enter a URL below to analyze its characteristics
+                and receive a machine learning prediction.
+            </p>
+
+            <form method="POST" action="/">
+
+                <div class="input-group">
+
+                    <input
+                        type="text"
+                        name="url"
+                        placeholder="https://example.com"
+                        value="{{ scanned_url }}"
+                        required
+                    >
+
+                    <button type="submit">
+                        Analyze URL →
+                    </button>
+
+                </div>
+
+            </form>
+
+            <div class="hint">
+                Analysis uses extracted URL features.
+                No website content is downloaded or opened.
+            </div>
+
+        </section>
+
+
+        <!-- ERROR MESSAGE -->
+
+        {% if error %}
+
+        <div class="error">
+            {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        <!-- SCAN RESULT -->
+
+        {% if result %}
+
+        <section class="section">
+
+            <div class="section-heading">
+                <h2>Scan Result</h2>
+                <p>Machine learning analysis of the submitted URL</p>
+            </div>
+
+            <div class="result-card
+                {% if result.is_phishing %}
+                    danger
+                {% else %}
+                    safe
+                {% endif %}
+            ">
+
+                <div class="result-label">
+                    {% if result.is_phishing %}
+                        ⚠ POTENTIAL THREAT
+                    {% else %}
+                        ✓ NO PHISHING PATTERN DETECTED
+                    {% endif %}
+                </div>
+
+                <h2>{{ result.label }}</h2>
+
+                <div class="scanned-url">
+                    {{ scanned_url }}
+                </div>
+
+                <div class="score">
+                    {{ result.confidence }}%
+                </div>
+
+                <div class="score-caption">
+                    Model-estimated phishing score
+                </div>
+
+                <p class="result-note">
+                    This score is the model's estimated probability
+                    for the phishing class. It is not a verified
+                    reputation score or proof of malicious activity.
+                </p>
+
+            </div>
+
+
+            <!-- EXTRACTED FEATURES -->
+
+            <div class="section-heading">
+                <h2>Extracted URL Features</h2>
+                <p>Numerical characteristics provided to the ML model</p>
+            </div>
+
+            <div class="feature-grid">
+
+                {% for name, value in result.features.items() %}
+
+                <div class="feature-item">
+
+                    <span>
+                        {{ name.replace('_', ' ').title() }}
+                    </span>
+
+                    <strong>
+                        {{ value }}
+                    </strong>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+        {% endif %}
+
+
+        <!-- MODEL OVERVIEW -->
+
+        <section class="section">
+
+            <div class="section-heading">
+                <h2>Model Overview</h2>
+                <p>Information about the trained machine learning model</p>
+            </div>
+
+            <div class="overview-grid">
+
+                <div class="overview-card">
+                    <p>ML Algorithm</p>
+                    <h3>Random Forest</h3>
+                </div>
+
+                <div class="overview-card">
+                    <p>Training Samples</p>
+                    <h3>16,000</h3>
+                </div>
+
+                <div class="overview-card">
+                    <p>Test Accuracy</p>
+                    <h3>90.83%</h3>
+                </div>
+
+                <div class="overview-card">
+                    <p>URL Features</p>
+                    <h3>11</h3>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ANALYTICS DASHBOARD -->
+
+        <section class="section">
+
+            <div class="section-heading">
+                <h2>Scan Analytics</h2>
+                <p>
+                    Overview of URLs analyzed by PhishFlow-AI
+                </p>
+            </div>
+
+
+            <div class="analytics-grid">
+
+                <div class="analytics-card">
+
+                    <p>Total Scans</p>
+
+                    <h2>
+                        {{ stats.total_scans }}
+                    </h2>
+
+                </div>
+
+
+                <div class="analytics-card">
+
+                    <p>Potential Phishing</p>
+
+                    <h2 class="phishing-value">
+                        {{ stats.phishing_scans }}
+                    </h2>
+
+                </div>
+
+
+                <div class="analytics-card">
+
+                    <p>Likely Legitimate</p>
+
+                    <h2 class="legitimate-value">
+                        {{ stats.legitimate_scans }}
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <!-- SCAN DISTRIBUTION -->
+
+            <div class="analytics-card distribution-card">
+
+                <h3>Scan Distribution</h3>
+
+                <p>
+                    Potential Phishing —
+                    {{ stats.phishing_percent }}%
+                </p>
+
+                <div class="analytics-bar">
+
+                    <div
+                        class="phishing-bar"
+                        style="width: {{ stats.phishing_percent }}%;"
+                    ></div>
+
+                </div>
+
+
+                <p style="margin-top: 22px;">
+                    Likely Legitimate —
+                    {{ stats.legitimate_percent }}%
+                </p>
+
+                <div class="analytics-bar">
+
+                    <div
+                        class="legitimate-bar"
+                        style="width: {{ stats.legitimate_percent }}%;"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- RECENT SCAN HISTORY -->
+
+        <section class="section">
+
+            <div class="section-heading">
+
+                <h2>Recent Scan History</h2>
+
+                <p>
+                    Your latest 20 URL analysis records
+                </p>
+
+            </div>
+
+
+            <div class="history-wrapper">
+
+                {% if history %}
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>URL</th>
+                            <th>Prediction</th>
+                            <th>Phishing Score</th>
+                            <th>Date & Time</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for scan in history %}
+
+                        <tr>
+
+                            <td>
+                                {{ scan.url }}
+                            </td>
+
+                            <td>
+
+                                {% if scan.prediction == "Potential Phishing" %}
+
+                                    <span class="history-danger">
+                                        ⚠ Potential Phishing
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="history-safe">
+                                        ✓ Likely Legitimate
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ scan.confidence }}%
+                            </td>
+
+                            <td>
+                                {{ scan.scanned_at }}
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+                {% else %}
+
+                <div class="empty-state">
+                    No scans yet. Analyze your first URL to
+                    start building scan history.
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- FOOTER -->
+
+    <footer>
+
+        <p>
+            Built with <span>♥</span> for Cybersecurity
+        </p>
+
+        <p>
+            PhishFlow-AI | Machine Learning Based URL Analysis
+        </p>
+
+        <p>
+            Predictions are model outputs and should not be
+            treated as definitive security verdicts.
+        </p>
+
+    </footer>
+
+</body>
+</html>
