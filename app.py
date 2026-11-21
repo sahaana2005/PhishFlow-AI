@@ -1,8 +1,10 @@
+
 from flask import Flask, render_template, request
 import joblib
 import os
 import sqlite3
 import sys
+import pandas as pd
 
 from pathlib import Path
 from datetime import datetime
@@ -17,8 +19,8 @@ SRC_DIR = BASE_DIR / "src"
 MODEL_PATH = BASE_DIR / "models" / "phishflow_random_forest.pkl"
 DATABASE_PATH = BASE_DIR / "phishflow.db"
 
-# Vercel's project folder is read-only, so use /tmp when it can't be written to.
-# (Scan history in /tmp is temporary and resets now and then.)
+# Vercel's project folder may be read-only.
+# Use /tmp as a fallback.
 if not os.access(BASE_DIR, os.W_OK):
     DATABASE_PATH = Path("/tmp/phishflow.db")
 
@@ -27,10 +29,14 @@ MAX_URL_LENGTH = 2048
 sys.path.insert(0, str(SRC_DIR))
 
 from url_features import extract_url_features
+from domain_checker import check_trusted_domain
 
 app = Flask(__name__)
 
-# Load trained model
+# --------------------------------------------------
+# 2. LOAD TRAINED MODEL
+# --------------------------------------------------
+
 saved_data = joblib.load(MODEL_PATH)
 
 model = saved_data["model"]
@@ -38,7 +44,7 @@ feature_names = saved_data["features"]
 
 
 # --------------------------------------------------
-# 2. DATABASE SETUP
+# 3. DATABASE SETUP
 # --------------------------------------------------
 
 def get_db_connection():
@@ -68,7 +74,7 @@ def initialize_database():
 
 
 # --------------------------------------------------
-# 3. SAVE SCAN
+# 4. SAVE SCAN
 # --------------------------------------------------
 
 def save_scan(url, prediction, confidence):
@@ -93,7 +99,7 @@ def save_scan(url, prediction, confidence):
 
 
 # --------------------------------------------------
-# 4. GET SCAN HISTORY
+# 5. GET SCAN HISTORY
 # --------------------------------------------------
 
 def get_scan_history():
@@ -113,7 +119,7 @@ def get_scan_history():
 
 
 # --------------------------------------------------
-# 5. GET DASHBOARD ANALYTICS
+# 6. GET DASHBOARD ANALYTICS
 # --------------------------------------------------
 
 def get_dashboard_stats():
@@ -160,7 +166,7 @@ def get_dashboard_stats():
 
 
 # --------------------------------------------------
-# 6. MAIN PAGE AND URL SCANNER
+# 7. MAIN PAGE AND URL SCANNER
 # --------------------------------------------------
 
 @app.route("/", methods=["GET", "POST"])
@@ -189,15 +195,18 @@ def home():
             # Extract URL features
             features = extract_url_features(scanned_url)
 
-            # Arrange features in training order
-            input_data = [[
-                features[name] for name in feature_names
-            ]]
+            # Arrange features in the same order as model training
+            input_data = pd.DataFrame(
+                [[features[name] for name in feature_names]],
+                columns=feature_names
+            )
 
-            # Predict URL classification
+            # ------------------------------------------
+            # MACHINE LEARNING PREDICTION
+            # ------------------------------------------
+
             prediction = int(model.predict(input_data)[0])
 
-            # Calculate phishing probability
             probabilities = model.predict_proba(input_data)[0]
 
             phishing_index = list(model.classes_).index(1)
@@ -206,27 +215,57 @@ def home():
                 float(probabilities[phishing_index]) * 100, 2
             )
 
-            label = (
+            ml_label = (
                 "Potential Phishing"
                 if prediction == 1
                 else "Likely Legitimate"
             )
 
+            # ------------------------------------------
+            # TRUSTED DOMAIN VERIFICATION
+            # ------------------------------------------
+
+            trusted_domain = check_trusted_domain(scanned_url)
+
+            domain_status = (
+                "Trusted domain match"
+                if trusted_domain
+                else "No trusted domain match"
+            )
+
+            # ------------------------------------------
+            # FINAL RESULT
+            # ------------------------------------------
+
             result = {
-                "label": label,
+                # Original ML assessment
+                "label": ml_label,
                 "is_phishing": prediction == 1,
                 "confidence": phishing_score,
+
+                # Separate trusted-domain assessment
+                "trusted_domain": trusted_domain,
+                "domain_status": domain_status,
+
+                # Extracted URL features
                 "features": features,
             }
 
-            # Save successful scan
-            save_scan(scanned_url, label, phishing_score)
+            # Save original ML prediction to scan history
+            save_scan(
+                scanned_url,
+                ml_label,
+                phishing_score
+            )
 
         except (ValueError, TypeError, KeyError) as e:
             error = str(e)
 
         except Exception:
-            app.logger.exception("Unexpected error during URL analysis")
+            app.logger.exception(
+                "Unexpected error during URL analysis"
+            )
+
             error = (
                 "Unable to analyze this URL. "
                 "Please check the input and try again."
@@ -247,7 +286,7 @@ def home():
 
 
 # --------------------------------------------------
-# 7. START APPLICATION
+# 8. START APPLICATION
 # --------------------------------------------------
 
 initialize_database()
